@@ -25,9 +25,17 @@ while [[ $# -gt 0 ]]; do
         AUTO_MERGE=true
         shift 1
         ;;
+    --body)
+        CUSTOM_BODY="$2"
+        shift 2
+        ;;
+    --title)
+        CUSTOM_TITLE="$2"
+        shift 2
+        ;;
     *)
         echo "❌ Unknown option: $1"
-        echo "Usage: $0 [--path <repo-path>] [--target-branch <branch>] [--head-branch <branch>]"
+        echo "Usage: $0 [--path <repo-path>] [--target-branch <branch>] [--head-branch <branch>] [--body <body>] [--title <title>]"
         exit 1
         ;;
     esac
@@ -58,12 +66,24 @@ RELEASE_BODY=$(gh release view "$LATEST_TAG" --json body --jq '.body')
 
 echo "✅ Latest release tag: $LATEST_TAG"
 
+if [ -z "$CUSTOM_BODY" ]; then
+    PR_BODY="$RELEASE_BODY"
+else
+    PR_BODY="$CUSTOM_BODY"
+fi
+
+if [ -z "$CUSTOM_TITLE" ]; then
+    PR_TITLE="chore: merge $HEAD_BRANCH $LATEST_TAG"
+else
+    PR_TITLE="$CUSTOM_TITLE"
+fi
+
 echo "Creating pull request..."
 PR_URL=$(gh pr create \
     --base "$TARGET_BRANCH" \
     --head "$HEAD_BRANCH" \
-    --title "chore: merge $HEAD_BRANCH $LATEST_TAG" \
-    --body "$RELEASE_BODY" \
+    --title "$PR_TITLE" \
+    --body "$PR_BODY" \
     --assignee "@me" \
     --reviewer "sang-avalonbay")
 
